@@ -21,5 +21,6 @@
         if (!firstRender) return;
 
         supported = await FileSystemAccessService.IsSupportedAsync();
+        StateHasChanged();
     }
 }
