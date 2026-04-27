@@ -1,7 +1,25 @@
 ﻿@page "/"
+@inject IFileSystemAccessService FileSystemAccessService
 
-<PageTitle>Home</PageTitle>
+<PageTitle>less-for-web</PageTitle>
 
-<h1>Hello, world!</h1>
+@if (supported is null) {
+    <h2>...</h2>
+    return;
+}
 
-Welcome to your new app.
+@if (supported is false) {
+    <code><h2>The File System Access API is not supported in your browser. It is supported in Chrome for desktop.</h2></code>
+    return;
+}
+
+@code {
+    bool? supported = null;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        supported = await FileSystemAccessService.IsSupportedAsync();
+    }
+}
