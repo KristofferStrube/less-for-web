@@ -33,23 +33,25 @@
     return;
 }
 
-@if (fileHandle is null)
-{
-    <div class="container">
+<div class="container">
+    @if (fileHandle is null)
+    {
         <button @onclick="OpenFile">Open File</button>
-        <select @onchange=@(e => selectedEncoding = encodingOptions[(string)e.Value!])>
-            @foreach ((string name, Encoding encoding) in encodingOptions)
-            {
-                <option value="@name" selected=@(selectedEncoding == encoding)>@name</option>
-            }
-        </select>
-    </div>
-    return;
-}
+    }
+    else
+    {
+        <button @onclick="OpenANewFile">Open a New File</button>
+    }
 
-<button @onclick="OpenANewFile">Open a New File</button>
-
+    <select @onchange=@(e => selectedEncoding = encodingOptions[(string)e.Value!])>
+        @foreach ((string name, Encoding encoding) in encodingOptions)
+        {
+            <option value="@name" selected=@(selectedEncoding == encoding)>@name</option>
+        }
+    </select>
+</div>
 <code><pre>@fileContent</pre></code>
+
 
 @code {
     private bool? supported = null;
