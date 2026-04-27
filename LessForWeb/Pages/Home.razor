@@ -1,20 +1,68 @@
 ﻿@page "/"
+@using System.Text
+@using System.Text.Unicode
 @inject IFileSystemAccessService FileSystemAccessService
+@implements IAsyncDisposable
 
 <PageTitle>less-for-web</PageTitle>
 
-@if (supported is null) {
+<h1>
+    <span>less-for-web&nbsp;</span>
+    @if (fileName is not null)
+    {
+        <span>- @fileName</span>
+    }
+</h1>
+
+@if (supported is null)
+{
     <h2>...</h2>
     return;
 }
 
-@if (supported is false) {
+@if (supported is false)
+{
     <code><h2>The File System Access API is not supported in your browser. It is supported in Chrome for desktop.</h2></code>
     return;
 }
 
+@if (error is not null)
+{
+    <h2>An error happened</h2>
+    <code>@error</code>
+    return;
+}
+
+@if (fileHandle is null)
+{
+    <div class="container">
+        <button @onclick="OpenFile">Open File</button>
+        <select @onchange=@(e => selectedEncoding=encodingOptions[(string)e.Value!])>
+            @foreach((string name, Encoding encoding) in encodingOptions) {
+                <option value="@name" selected=@(selectedEncoding == encoding)>@name</option>
+            }
+        </select>
+    </div>
+    return;
+}
+
+<button @onclick="OpenANewFile">Open a New File</button>
+
+<code><pre>@fileContent</pre></code>
+
 @code {
-    bool? supported = null;
+    private bool? supported = null;
+    private FileSystemFileHandle? fileHandle;
+    private AsyncIterator<ValueReference>? fileIterator;
+    private string? error;
+    private string? fileName;
+    private string fileContent = "";
+    private Encoding selectedEncoding = Encoding.Unicode;
+    private Dictionary<string, Encoding> encodingOptions = new () {
+        ["UTF-8"] = Encoding.UTF8,
+        ["Unicode"] = Encoding.Unicode,
+        ["ASCII"] = Encoding.ASCII
+    };
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -22,5 +70,62 @@
 
         supported = await FileSystemAccessService.IsSupportedAsync();
         StateHasChanged();
+    }
+
+    private async Task OpenFile()
+    {
+        try
+        {
+            var handles = await FileSystemAccessService.ShowOpenFilePickerAsync(new()
+            {
+                Multiple = false,
+                Id = "less-for-web"
+            });
+            fileHandle = handles.Single();
+            fileName = await fileHandle.GetNameAsync();
+            await ReadPartOfFile(fileHandle);
+        }
+        catch (Exception e)
+        {
+            error = e.Message;
+        }
+    }
+
+    private async Task OpenANewFile() {
+        await DisposeAsync();
+        fileHandle = null;
+        fileIterator = null;
+        fileContent = "";
+        fileName = null;
+        await OpenFile();
+    }
+
+    private async Task ReadPartOfFile(FileSystemFileHandle fileHandle)
+    {
+        if (fileIterator is null)
+        {
+            await using File file = await fileHandle.GetFileAsync();
+            await using ReadableStream stream = await file.StreamAsync();
+            fileIterator = await stream.ValuesAsync();
+        }
+
+        bool moreContentAvailable = await fileIterator.MoveNextAsync();
+        if (moreContentAvailable)
+        {
+            byte[] content = await fileIterator.Current.GetValueAsync<byte[]>();
+            fileContent += selectedEncoding.GetString(content);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (fileHandle is not null)
+        {
+            await fileHandle.DisposeAsync();
+        }
+        if (fileIterator is not null)
+        {
+            await fileIterator.DisposeAsync();
+        }
     }
 }

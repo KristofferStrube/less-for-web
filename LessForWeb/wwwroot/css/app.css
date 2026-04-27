@@ -1,6 +1,34 @@
 body {
     background-color: #222244;
     color: #DDDDFF;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+h1 {
+    width: 100%;
+    text-align: center;
+}
+
+button {
+    background-color: #c02d76;
+    color: #DDDDFF;
+    border: none;
+    border-radius: 0;
+    font-size: larger;
+    padding: 15px;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+}
+
+select {
+    background-color: #c02d76;
+    color: #DDDDFF;
+    border: none;
+    border-radius: 0;
+    font-size: larger;
+    padding: 15px;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
 }
 
 .valid.modified:not([type=checkbox]) {
@@ -27,6 +55,7 @@ body {
     position: fixed;
     width: 100%;
     z-index: 1000;
+    color: black;
 }
 
     #blazor-error-ui .dismiss {
