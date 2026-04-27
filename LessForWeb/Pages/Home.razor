@@ -37,8 +37,9 @@
 {
     <div class="container">
         <button @onclick="OpenFile">Open File</button>
-        <select @onchange=@(e => selectedEncoding=encodingOptions[(string)e.Value!])>
-            @foreach((string name, Encoding encoding) in encodingOptions) {
+        <select @onchange=@(e => selectedEncoding = encodingOptions[(string)e.Value!])>
+            @foreach ((string name, Encoding encoding) in encodingOptions)
+            {
                 <option value="@name" selected=@(selectedEncoding == encoding)>@name</option>
             }
         </select>
@@ -58,7 +59,8 @@
     private string? fileName;
     private string fileContent = "";
     private Encoding selectedEncoding = Encoding.Unicode;
-    private Dictionary<string, Encoding> encodingOptions = new () {
+    private Dictionary<string, Encoding> encodingOptions = new()
+    {
         ["UTF-8"] = Encoding.UTF8,
         ["Unicode"] = Encoding.Unicode,
         ["ASCII"] = Encoding.ASCII
@@ -87,11 +89,12 @@
         }
         catch (Exception e)
         {
-            error = e.Message;
+            error = e.Message + (e.InnerException?.Message ?? "");
         }
     }
 
-    private async Task OpenANewFile() {
+    private async Task OpenANewFile()
+    {
         await DisposeAsync();
         fileHandle = null;
         fileIterator = null;
@@ -102,18 +105,25 @@
 
     private async Task ReadPartOfFile(FileSystemFileHandle fileHandle)
     {
-        if (fileIterator is null)
+        try
         {
-            await using File file = await fileHandle.GetFileAsync();
-            await using ReadableStream stream = await file.StreamAsync();
-            fileIterator = await stream.ValuesAsync();
-        }
+            if (fileIterator is null)
+            {
+                await using File file = await fileHandle.GetFileAsync();
+                await using ReadableStream stream = await file.StreamAsync();
+                fileIterator = await stream.ValuesAsync();
+            }
 
-        bool moreContentAvailable = await fileIterator.MoveNextAsync();
-        if (moreContentAvailable)
+            bool moreContentAvailable = await fileIterator.MoveNextAsync();
+            if (moreContentAvailable)
+            {
+                byte[] content = await fileIterator.Current.GetValueAsync<byte[]>();
+                fileContent += selectedEncoding.GetString(content);
+            }
+        }
+        catch (Exception e)
         {
-            byte[] content = await fileIterator.Current.GetValueAsync<byte[]>();
-            fileContent += selectedEncoding.GetString(content);
+            error = e.Message + (e.InnerException?.Message ?? "");
         }
     }
 
